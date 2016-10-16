@@ -1,5 +1,4 @@
 //! TTY format
-
 use self::Format::{Blue, Bold, Cyan, GrayScale, Green, Magenta, Red, Underline, Yellow};
 
 /// Format patterns

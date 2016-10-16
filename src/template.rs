@@ -1,8 +1,9 @@
 //! Output style template
 use std::collections::HashMap;
+
+use progress::Progress;
 use self::Process::{Connect, ContentTransfer, DnsLookup, NameLookup, PreTransfer,
                     ServerProcessing, SslHandshake, StartTransfer, TcpConnection, Total};
-use progress::Progress;
 
 /// Values for output template
 #[derive(Clone)]
@@ -36,6 +37,17 @@ impl Process {
         };
 
         index.to_owned()
+    }
+
+    /// A format of text-align
+    pub fn align(&self, ms: usize) -> String {
+        let elapsed = format!("{}ms", ms);
+        match *self {
+            DnsLookup | TcpConnection | SslHandshake | ServerProcessing | ContentTransfer => {
+                format!("{:^7}", elapsed)
+            }
+            NameLookup | Connect | PreTransfer | StartTransfer | Total => format!("{:<7}", elapsed),
+        }
     }
 }
 
@@ -148,17 +160,17 @@ mod tests {
         assert_eq!(t.format(),
                    "  DNS Lookup   TCP Connection   Server Processing   Content Transfer
 [   \
-                    \x1b[34m100ms\x1b[0m  |     \x1b[34m200ms\x1b[0m    |      \
-                    \x1b[34m300ms\x1b[0m      |      \x1b[34m400ms\x1b[0m     ]
+                    \x1b[34m 100ms \x1b[0m  |     \x1b[34m 200ms \x1b[0m    |      \
+                    \x1b[34m 300ms \x1b[0m      |      \x1b[34m 400ms \x1b[0m     ]
              |                \
                     |                   |                  |
-    namelookup:\x1b[34m500ms\x1b[0m        |                   \
+    namelookup:\x1b[34m500ms  \x1b[0m        |                   \
                     |                  |
-                        connect:\x1b[34m600ms\x1b[0m           |                  \
+                        connect:\x1b[34m600ms  \x1b[0m           |                  \
                     |
-                                      starttransfer:\x1b[34m700ms\x1b[0m          |
+                                      starttransfer:\x1b[34m700ms  \x1b[0m          |
                                                                  \
-                    total:\x1b[34m800ms\x1b[0m");
+                    total:\x1b[34m800ms  \x1b[0m");
     }
 
     #[test]
@@ -178,20 +190,20 @@ mod tests {
         assert_eq!(t.format(),
                    "  DNS Lookup   TCP Connection   SSL Handshake   Server Processing   Content \
                     Transfer
-[   \x1b[31m100ms\x1b[0m  |     \x1b[31m200ms\x1b[0m    |    \
-                    \x1b[31m300ms\x1b[0m    |      \x1b[31m400ms\x1b[0m      |      \
-                    \x1b[31m500ms\x1b[0m     ]
+[   \x1b[31m 100ms \x1b[0m  |     \x1b[31m 200ms \x1b[0m    |    \
+                    \x1b[31m 300ms \x1b[0m    |      \x1b[31m 400ms \x1b[0m      |      \
+                    \x1b[31m 500ms \x1b[0m     ]
              |                |               |                   \
                     |                  |
-    namelookup:\x1b[31m600ms\x1b[0m        |               |                   \
+    namelookup:\x1b[31m600ms  \x1b[0m        |               |                   \
                     |                  |
-                        connect:\x1b[31m700ms\x1b[0m       |                   \
+                        connect:\x1b[31m700ms  \x1b[0m       |                   \
                     |                  |
-                                    pretransfer:\x1b[31m800ms\x1b[0m           \
+                                    pretransfer:\x1b[31m800ms  \x1b[0m           \
                     |                  |
                                                       \
-                    starttransfer:\x1b[31m900ms\x1b[0m          |
+                    starttransfer:\x1b[31m900ms  \x1b[0m          |
                                                                                  \
-                    total:\x1b[31m1000ms\x1b[0m");
+                    total:\x1b[31m1000ms \x1b[0m");
     }
 }

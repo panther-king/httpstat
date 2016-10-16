@@ -21,9 +21,10 @@ impl Progress {
 
     /// Returns a elapsed time for output
     pub fn output(&self) -> (String, String) {
-        let time = format!("{}ms", self.ms);
+        let index = self.process.index();
+        let aligned = self.process.align(self.ms);
 
-        (self.process.index(), self.formatter.tty(&time))
+        (index, self.formatter.tty(&aligned))
     }
 }
 
@@ -34,11 +35,20 @@ mod tests {
     use template::Process::*;
 
     #[test]
-    fn output_progress() {
+    fn output_progress_dns_lookup() {
         let p = Progress::new(DnsLookup, 100, Blue);
         let (index, format) = p.output();
 
         assert_eq!(index, "a0000");
-        assert_eq!(format, "\x1b[34m100ms\x1b[0m");
+        assert_eq!(format, "\x1b[34m 100ms \x1b[0m");
+    }
+
+    #[test]
+    fn output_progress_name_lookup() {
+        let p = Progress::new(NameLookup, 100, Blue);
+        let (index, format) = p.output();
+
+        assert_eq!(index, "b0000");
+        assert_eq!(format, "\x1b[34m100ms  \x1b[0m");
     }
 }
