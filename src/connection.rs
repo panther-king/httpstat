@@ -1,5 +1,4 @@
 //! HTTP/HTTPS request
-
 use std::collections::HashMap;
 use std::env;
 use std::fs::File;
@@ -11,12 +10,12 @@ pub struct Connection {
 
 impl Connection {
     /// Returns Connection with a curl command
-    pub fn with_curl(args: env::Args) -> Connection {
+    pub fn with_curl(args: Vec<String>) -> Connection {
         let excludes =
             vec!["-w", "--write-out", "-D", "--dump-header", "-o", "--output", "-s", "--silent"];
         let mut command = Command::new("curl");
 
-        for arg in args.skip(1) {
+        for arg in args.iter() {
             match excludes.iter().find(|&e| e == &arg) {
                 Some(_) => panic!(""),
                 None => {
