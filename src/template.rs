@@ -3,7 +3,7 @@ use std::collections::HashMap;
 
 use progress::Progress;
 use self::Process::{Connect, ContentTransfer, DnsLookup, NameLookup, PreTransfer,
-                    ServerProcessing, SslHandshake, StartTransfer, TcpConnection, Total};
+                    ServerProcessing, TlsHandshake, StartTransfer, TcpConnection, Total};
 
 /// Values for output template
 #[derive(Clone)]
@@ -14,7 +14,7 @@ pub enum Process {
     NameLookup,
     PreTransfer,
     ServerProcessing,
-    SslHandshake,
+    TlsHandshake,
     StartTransfer,
     TcpConnection,
     Total,
@@ -26,7 +26,7 @@ impl Process {
         let index = match *self {
             DnsLookup => "a0000",
             TcpConnection => "a0001",
-            SslHandshake => "a0002",
+            TlsHandshake => "a0002",
             ServerProcessing => "a0003",
             ContentTransfer => "a0004",
             NameLookup => "b0000",
@@ -43,7 +43,7 @@ impl Process {
     pub fn align(&self, ms: usize) -> String {
         let elapsed = format!("{}ms", ms);
         match *self {
-            DnsLookup | TcpConnection | SslHandshake | ServerProcessing | ContentTransfer => {
+            DnsLookup | TcpConnection | TlsHandshake | ServerProcessing | ContentTransfer => {
                 format!("{:^7}", elapsed)
             }
             NameLookup | Connect | PreTransfer | StartTransfer | Total => format!("{:<7}", elapsed),
@@ -72,6 +72,16 @@ impl Template {
             ref a if a == "https" => self.https_format(),
             _ => self.http_format(),
         }
+    }
+
+    /// Returns HTTP scheme or not
+    pub fn is_http(&self) -> bool {
+        self.scheme == "http"
+    }
+
+    /// Returns HTTPS scheme or not
+    pub fn is_https(&self) -> bool {
+        self.scheme == "https"
     }
 
     /// Add a progress
@@ -103,7 +113,7 @@ DNS Lookup   TCP Connection   Server Processing   Content Transfer
     /// HTTPS format
     fn https_format(&self) -> String {
         format!("  \
-DNS Lookup   TCP Connection   SSL Handshake   Server Processing   Content Transfer
+DNS Lookup   TCP Connection   TLS Handshake   Server Processing   Content Transfer
 [   {a0000}  |     {a0001}    |    {a0002}    |      {a0003}      |      {a0004}     ]
              |                |               |                   |                  |
     namelookup:{b0000}        |               |                   |                  |
@@ -135,7 +145,7 @@ mod tests {
     fn process_index() {
         assert_eq!(DnsLookup.index(), "a0000");
         assert_eq!(TcpConnection.index(), "a0001");
-        assert_eq!(SslHandshake.index(), "a0002");
+        assert_eq!(TlsHandshake.index(), "a0002");
         assert_eq!(ServerProcessing.index(), "a0003");
         assert_eq!(ContentTransfer.index(), "a0004");
         assert_eq!(NameLookup.index(), "b0000");
@@ -143,6 +153,22 @@ mod tests {
         assert_eq!(PreTransfer.index(), "b0002");
         assert_eq!(StartTransfer.index(), "b0003");
         assert_eq!(Total.index(), "b0004");
+    }
+
+    #[test]
+    fn scheme_is_http() {
+        let t = Template::new("http");
+
+        assert!(t.is_http());
+        assert!(!t.is_https());
+    }
+
+    #[test]
+    fn scheme_is_https() {
+        let t = Template::new("https");
+
+        assert!(!t.is_http());
+        assert!(t.is_https());
     }
 
     #[test]
@@ -178,7 +204,7 @@ mod tests {
         let mut t = Template::new("https");
         t.progress(Progress::new(DnsLookup, 100, Red));
         t.progress(Progress::new(TcpConnection, 200, Red));
-        t.progress(Progress::new(SslHandshake, 300, Red));
+        t.progress(Progress::new(TlsHandshake, 300, Red));
         t.progress(Progress::new(ServerProcessing, 400, Red));
         t.progress(Progress::new(ContentTransfer, 500, Red));
         t.progress(Progress::new(NameLookup, 600, Red));
@@ -188,7 +214,7 @@ mod tests {
         t.progress(Progress::new(Total, 1000, Red));
 
         assert_eq!(t.format(),
-                   "  DNS Lookup   TCP Connection   SSL Handshake   Server Processing   Content \
+                   "  DNS Lookup   TCP Connection   TLS Handshake   Server Processing   Content \
                     Transfer
 [   \x1b[31m 100ms \x1b[0m  |     \x1b[31m 200ms \x1b[0m    |    \
                     \x1b[31m 300ms \x1b[0m    |      \x1b[31m 400ms \x1b[0m      |      \
